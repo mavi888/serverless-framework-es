@@ -1,0 +1,4 @@
+.serverless/cloudformation-template-update-stack.json
+.serverless/meta.json
+.serverless/test.zip
+.serverless/serverless-state.json
