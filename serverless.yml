@@ -1,3 +1,7 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: foobar
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: test
 
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: pizzaApp
@@ -13,3 +17,9 @@ functions:
       - httpApi:
           path: /order
           method: post
+  getOrder:
+    handler: handler.getOrder
+    events:
+      - httpApi:
+          path: /order/{orderId}
+          method: get

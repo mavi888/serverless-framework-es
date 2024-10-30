@@ -27,3 +27,24 @@ exports.newOrder = async (event) => {
     }),
   };
 }
+
+exports.getOrder = async (event) => {
+  console.log(event);
+
+  const orderId = event.pathParameters.orderId
+
+  const orderDetails = {
+    "pizza": "Margarita",
+    "customerId": 1,
+    "order_status": "COMPLETED"
+  }
+
+  const order = {orderId, ...orderDetails}
+
+  console.log(order);
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({message: order})
+  };
+}
