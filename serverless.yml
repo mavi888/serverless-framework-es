@@ -9,10 +9,24 @@ service: pizzaApp
 provider:
   name: aws
   runtime: nodejs20.x
+  region: us-east-1
+  environment:
+    REGION: ${self:provider.region}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - sqs:sendMessage
+          Resource:
+            Fn::GetAtt: [PendingOrderQueue, Arn]
 
 functions:
   newOrder:
     handler: handler.newOrder
+    environment:
+      PENDING_ORDERS_QUEUE: 
+        Ref: PendingOrderQueue
     events:
       - httpApi:
           path: /order
