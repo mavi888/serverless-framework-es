@@ -6,7 +6,7 @@ const { SQSClient, SendMessageCommand } = require ("@aws-sdk/client-sqs");
 const sqsClient = new SQSClient({ region: process.env.REGION });
 
 const { DynamoDBClient } = require ("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, PutCommand } = require ("@aws-sdk/lib-dynamodb");
+const { DynamoDBDocumentClient, PutCommand, UpdateCommand, GetCommand } = require ("@aws-sdk/lib-dynamodb");
 
 // Create a DynamoDB client
 const client = new DynamoDBClient({ region: process.env.REGION }); 
@@ -54,24 +54,37 @@ exports.getOrder = async (event) => {
 
   const orderId = event.pathParameters.orderId
 
-  const orderDetails = {
-    "pizza": "Margarita",
-    "customerId": 1,
-    "order_status": "COMPLETED"
+  try {
+    const order = await getItemFromDynamoDB(orderId);
+    console.log(order)
+    return {
+      statusCode: 200,
+      body: JSON.stringify(order)
+    };
+   } catch (error) {
+    console.error("Error retrieving order:", error);
+
+    if (error.name === "ItemNotFoundException") {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: "Order not found" }),
+      };
+    } else {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: "Error retrieving order" }),
+      };
+    }
   }
-
-  const order = {orderId, ...orderDetails}
-
-  console.log(order);
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({message: order})
-  };
 }
 
 exports.prepOrder = async (event) => {
   console.log(event);
+
+  const body = JSON.parse(event.Records[0].body);
+  const orderId = body.orderId;
+
+  await updateStatusInOrder(orderId, "COMPLETED");
 
   return;
 };
@@ -131,4 +144,61 @@ async function saveItemToDynamoDB(item) {
     console.error("Error saving item:", error);
     throw error;
   }
+}
+
+async function updateStatusInOrder(orderId, status) {
+
+  const params = {
+    TableName: process.env.ORDERS_TABLE,
+    Key:{orderId},
+    UpdateExpression: "SET order_status = :c",
+    ExpressionAttributeValues: {
+        ":c": status
+    },
+    ReturnValues: "ALL_NEW"
+};
+
+console.log(params);
+
+try {
+  const command = new UpdateCommand(params);
+  const response = await docClient.send(command);
+  console.log("Item updated successfully:", response.Attributes);
+  return response.Attributes;
+} catch (err) {
+  console.error("Error updating item:", err);
+  throw err;
+}
+}
+
+
+async function getItemFromDynamoDB(orderId) {
+
+  const params = {
+    TableName: process.env.ORDERS_TABLE,
+    Key:{orderId},
+  };
+
+  console.log(params);
+
+  try {
+    const command = new GetCommand(params);
+    const response = await docClient.send(command);
+    
+    if (response.Item) {
+      console.log("Item retrieved successfully:", response.Item);
+      return response.Item;
+    } else {
+      console.log("Item not found");
+      
+      let notFoundError = new Error("Item not found");
+      notFoundError.name = "ItemNotFoundException";
+      throw notFoundError;
+    }
+
+  } catch (error) {
+    console.error("Error retrieving item:", error);
+    throw error;
+  }
+
 }

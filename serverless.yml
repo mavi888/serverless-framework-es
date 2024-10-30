@@ -28,6 +28,8 @@ provider:
         - Effect: Allow
           Action:
             - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:GetItem
           Resource:
             Fn::GetAtt: [OrdersTable, Arn]
 
@@ -45,12 +47,18 @@ functions:
           method: post
   getOrder:
     handler: handler.getOrder
+    environment:
+      ORDERS_TABLE: 
+        Ref: OrdersTable
     events:
       - httpApi:
           path: /order/{orderId}
           method: get
   prepOrder: 
     handler: handler.prepOrder
+    environment:
+      ORDERS_TABLE: 
+        Ref: OrdersTable
     events:
       - sqs:
           arn: 
