@@ -5,6 +5,14 @@ const { SQSClient, SendMessageCommand } = require ("@aws-sdk/client-sqs");
 // Create an SQS client
 const sqsClient = new SQSClient({ region: process.env.REGION });
 
+const { DynamoDBClient } = require ("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, PutCommand } = require ("@aws-sdk/lib-dynamodb");
+
+// Create a DynamoDB client
+const client = new DynamoDBClient({ region: process.env.REGION }); 
+
+// Create a DynamoDB document client
+const docClient = DynamoDBDocumentClient.from(client);
 
 exports.newOrder = async (event) => {
 
@@ -26,6 +34,10 @@ exports.newOrder = async (event) => {
 
   const order = {orderId, ...orderDetails}
 
+  // Save order in the database
+  await saveItemToDynamoDB(order);
+
+    // Send message to the queue
   const PENDING_ORDERS_QUEUE_URL = process.env.PENDING_ORDERS_QUEUE;
   await sendMessageToSQS(order, PENDING_ORDERS_QUEUE_URL);
 
@@ -97,6 +109,26 @@ async function sendMessageToSQS(message, queueURL) {
     return data;
   } catch (error) {
     console.error("Error sending message:", error);
+    throw error;
+  }
+}
+
+async function saveItemToDynamoDB(item) {
+
+  const params = {
+    TableName: process.env.ORDERS_TABLE,
+    Item: item
+  };
+
+  console.log(params);
+
+  try {
+    const command = new PutCommand(params);
+    const response = await docClient.send(command);
+    console.log("Item saved successfully:", response);
+    return response;
+  } catch (error) {
+    console.error("Error saving item:", error);
     throw error;
   }
 }

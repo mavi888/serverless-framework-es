@@ -25,6 +25,11 @@ provider:
             - sqs:sendMessage
           Resource:
             Fn::GetAtt: [OrdersToSendQueue, Arn]
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+          Resource:
+            Fn::GetAtt: [OrdersTable, Arn]
 
 functions:
   newOrder:
@@ -32,6 +37,8 @@ functions:
     environment:
       PENDING_ORDERS_QUEUE: 
         Ref: PendingOrderQueue
+      ORDERS_TABLE: 
+        Ref: OrdersTable
     events:
       - httpApi:
           path: /order
