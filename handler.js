@@ -92,15 +92,25 @@ exports.prepOrder = async (event) => {
 exports.sendOrder = async (event) => {
   console.log(event);
 
-  const order = {
-    orderId: event.orderId,
-    pizza: event.pizza,
-    customerId: event.pizza
+  if (event.Records[0].eventName === 'MODIFY') {
+    const eventBody = event.Records[0].dynamodb;
+    console.log(eventBody)
+
+    const orderDetails = eventBody.NewImage;
+
+    const order = {
+      orderId: orderDetails.orderId.S,
+      pizza: orderDetails.pizza.S,
+      customerId: orderDetails.customerId.S,
+      order_status: orderDetails.order_status.S
+    }
+
+    console.log(order)
+
+    const ORDERS_TO_SEND_QUEUE_URL = process.env.ORDERS_TO_SEND_QUEUE
+
+    await sendMessageToSQS(order, ORDERS_TO_SEND_QUEUE_URL);
   }
-
-  const ORDERS_TO_SEND_QUEUE_URL = process.env.ORDERS_TO_SEND_QUEUE
-
-  await sendMessageToSQS(order, ORDERS_TO_SEND_QUEUE_URL);
 
   return;
 }

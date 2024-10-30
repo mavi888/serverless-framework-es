@@ -69,6 +69,14 @@ functions:
     environment:
       ORDERS_TO_SEND_QUEUE: 
         Ref: OrdersToSendQueue
+    events:
+      - stream:
+          type: dynamodb
+          arn: 
+            Fn::GetAtt: [OrdersTable, StreamArn]
+          filterPatterns:
+            - eventName: [MODIFY]
+          batchSize: 1
 
 resources: # Cloudformation template syntax
   Resources:
@@ -93,3 +101,5 @@ resources: # Cloudformation template syntax
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
