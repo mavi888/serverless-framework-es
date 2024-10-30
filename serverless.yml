@@ -23,3 +23,17 @@ functions:
       - httpApi:
           path: /order/{orderId}
           method: get
+  prepOrder: 
+    handler: handler.prepOrder
+    events:
+      - sqs:
+          arn: 
+            Fn::GetAtt: [PendingOrderQueue, Arn]
+          batchSize: 1
+
+resources: # Cloudformation template syntax
+  Resources:
+    PendingOrderQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: pendingOrderQueue
