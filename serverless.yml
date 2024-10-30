@@ -1,15 +1,15 @@
 
 # "service" is the name of this project. This will also be added to your AWS resource names.
-service: test
+service: pizzaApp
 
 provider:
   name: aws
   runtime: nodejs20.x
 
 functions:
-  hello:
-    handler: handler.hello
+  newOrder:
+    handler: handler.newOrder
     events:
       - httpApi:
-          path: /
-          method: get
+          path: /order
+          method: post
