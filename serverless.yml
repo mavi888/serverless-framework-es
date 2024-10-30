@@ -20,6 +20,11 @@ provider:
             - sqs:sendMessage
           Resource:
             Fn::GetAtt: [PendingOrderQueue, Arn]
+        - Effect: Allow
+          Action:
+            - sqs:sendMessage
+          Resource:
+            Fn::GetAtt: [OrdersToSendQueue, Arn]
 
 functions:
   newOrder:
@@ -44,6 +49,11 @@ functions:
           arn: 
             Fn::GetAtt: [PendingOrderQueue, Arn]
           batchSize: 1
+  sendOrder:
+    handler: handler.sendOrder
+    environment:
+      ORDERS_TO_SEND_QUEUE: 
+        Ref: OrdersToSendQueue
 
 resources: # Cloudformation template syntax
   Resources:
@@ -51,3 +61,7 @@ resources: # Cloudformation template syntax
       Type: AWS::SQS::Queue
       Properties:
         QueueName: pendingOrderQueue
+    OrdersToSendQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ordersToSendQueue
